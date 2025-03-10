@@ -55,7 +55,7 @@
 ##### A. semaphore sem[i][j] – 쓰레드[i]가 점(i, j)에 쓰기(write)를 하기 위한 세마포 
        [ 초기값: 0 ] 
 
-      | `take_4_points(i, j)` | `put_4_points(i, j)` |
+| **take_4_points(i, j)** | **put_4_points(i, j)** |
 |------------------------|----------------------|
 | ```c                 | ```c                 |
 | void take_4_points(int i, int j) { | void put_4_points(int i, int j) { |
