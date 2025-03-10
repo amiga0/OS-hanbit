@@ -41,49 +41,57 @@
 ---
 
 ### 📌 답 7️⃣  
-#### 🔹 동기화 알고리즘 설계  
-1. 각각의 쓰레드는 각 점에 대해, 미리 up, down, left, right를 검사하여  
-   주위 4개의 점에 모두 쓰기 (write)가 없을 때 4개의 점을 읽고(read)  
-   점수를 계산 및 합산하여 점 (i, j)에 쓰기(write)를 한다.  
-   (각 쓰레드는 하나의 세로줄을 관리하며, 쓰레드 번호를 `i`, 가로줄 번호를 `j`로 한다.)  
-2. 각 점에 대해 하나의 쓰레드만이 쓰기(write)를 할 수 있고,  
-   각 점에 하나의 읽기(read)가 있다면 쓰기(write)를 할 수 없다.  
+## 🔹 동기화 알고리즘 설계  
+
+1️⃣ 각각의 쓰레드는 각 점에 대해, 미리 `up`, `down`, `left`, `right`를 검사하여  
+   주위 4개의 점에 모두 쓰기(`write`)가 없을 때 4개의 점을 읽고(`read`)  
+   점수를 계산 및 합산하여 점 `(i, j)`에 쓰기(`write`)를 한다.  
+   (각 쓰레드는 하나의 세로줄을 관리한다. 쓰레드 번호를 `i`, 가로줄 번호를 `j`라 한다.)  
+
+2️⃣ 각 점에 대해 하나의 쓰레드만이 쓰기(`write`)를 할 수 있고,  
+   각 점에 하나의 읽기(`read`)가 있다면 쓰기(`write`)를 할 수 없다.  
 
 ---
 
-### 🔹 문제 해결을 위한 자료구조 및 초기화  
+## 🔹 문제 해결을 위한 자료구조 및 초기화  
 
-#### ✅ 세마포 및 상태 변수  
+### ✅ A. 세마포어(`semaphore`) 선언  
+- **`sem[i][j]`** – 쓰레드 `i`가 점 `(i,j)`에 쓰기(`write`)를 하기 위한 세마포어  
+  - 초기값: `0`  
+
+### ✅ B. 상태 변수(`state[i][j]`) 선언  
+- **`state[i][j]`** – 점 `(i,j)`가 쓰기 상태인지 아닌지를 저장  
+  - 쓰기 상태일 때 `state[i][j] = writing`  
+  - 초기값: `!writing`  
+
+---
+
+## 🔹 동기화 알고리즘 (함수 정의)  
+
+| `take_4_points(i, j)` | `put_4_points(i, j)` |
+|------------------------|----------------------|
+| ```c                 | ```c                 |
+| void take_4_points(int i, int j) { | void put_4_points(int i, int j) { |
+|     // mutex를 통해 state에 접근 |     // mutex를 통해 state에 접근 |
+|     p(mutex); |     p(mutex); |
+|     // 점(i, j) 사방의 점들의 state를 검사 |     // state 변경 |
+|     // 쓰기가 없다면 state 변경 및 v(sem) |     state[i][j] = !writing; |
+|     test(i, j); |     // 사방의 점을 확인하여 p(sem)으로 대기 중인 |
+|     v(mutex); |     // 쓰레드에 v() 전달 |
+|     // 점(i, j) 사방의 점에 쓰기가 없을 때까지 대기 |     test(i, j-1); |
+|     p(sem[i][j]); |     test(i, j+1); |
+| } |     test(i-1, j); |
+| ``` |     test(i+1, j); |
+| |     v(mutex); |
+| | } |
+| | ``` |
+
+---
+
+## 🔹 `test(i, j)` 함수 (쓰기 상태 확인)  
 ```c
-// 세마포 선언
-semaphore sem[i][j];  // 쓰레드[i]가 점(i,j)에 쓰기(write)하기 위한 세마포 (초깃값: 0)
-bool state[i][j];     // 점(i,j)의 쓰기 상태 저장 (초깃값: !writing)
-semaphore mutex;      // 상태를 관리하기 위한 세마포 (초값: 1)
-
-#### ✅ 함수 정의
-void take_4_points(int i, int j) {
-    p(mutex);
-    // 점(i, j) 사방의 점들의 상태를 검사하여 쓰기가 없다면 state 변경 및 v(sem)
-    test(i, j);
-    v(mutex);
-    // 점(i, j) 사방의 점에 쓰기가 없을 때까지 대기
-    p(sem[i][j]);
-}
-
-void put_4_points(int i, int j) {
-    p(mutex);
-    // 상태 변경
-    state[i][j] = !writing;
-    // 사방의 점을 확인하여 p(sem)으로 대기 중인 쓰레드에 v() 전달
-    test(i, j-1);
-    test(i, j+1);
-    test(i-1, j);
-    test(i+1, j);
-    v(mutex);
-}
-
 void test(int i, int j) {
-    // 점(i, j) 사방의 점들의 상태 확인
+    // 점(i, j) 사방의 점들의 state를 확인
     if (state[i][j-1] != writing &&
         state[i][j+1] != writing &&
         state[i-1][j] != writing &&
@@ -94,7 +102,7 @@ void test(int i, int j) {
     }
 }
 
-#### ✅ 쓰레드와 동기화 알고리즘
+## 🔹 쓰레드와 동기화 알고리즘
 void thread_function(int i) {
     for (int j = 0; j < 10; j++) {
         // 점(i, j) 사방에 write가 없을 때까지 대기
