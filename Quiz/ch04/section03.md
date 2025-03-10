@@ -55,23 +55,35 @@
 ##### A. semaphore sem[i][j] – 쓰레드[i]가 점(i, j)에 쓰기(write)를 하기 위한 세마포 
        [ 초기값: 0 ] 
 
-| **take_4_points(i, j)** | **put_4_points(i, j)** |
-|------------------------|----------------------|
-| ```c                 | ```c                 |
-| void take_4_points(int i, int j) { | void put_4_points(int i, int j) { |
-|     // mutex를 통해 state에 접근 |     // mutex를 통해 state에 접근 |
-|     p(mutex); |     p(mutex); |
-|     // 점(i, j) 사방의 점들의 state를 검사 |     // state 변경 |
-|     // 쓰기가 없다면 state 변경 및 v(sem) |     state[i][j] = !writing; |
-|     test(i, j); |     // 사방의 점을 확인하여 p(sem)으로 대기 중인 |
-|     v(mutex); |     // 쓰레드에 v() 전달 |
-|     // 점(i, j) 사방의 점에 쓰기가 없을 때까지 대기 |     test(i, j-1); |
-|     p(sem[i][j]); |     test(i, j+1); |
-| } |     test(i-1, j); |
-| ``` |     test(i+1, j); |
-| |     v(mutex); |
-| | } |
-| | ``` |
+### 📌 함수 정의  
+
+```c
+// take_4_points(i, j) 함수
+void take_4_points(int i, int j) {  
+    // mutex를 통해 state에 접근  
+    p(mutex);  
+    // 점(i, j) 사방의 점들의 state를 검사  
+    // 쓰기가 없다면 state 변경 및 v(sem)  
+    test(i, j);  
+    v(mutex);  
+    // 점(i, j) 사방의 점에 쓰기가 없을 때까지 대기  
+    p(sem[i][j]);  
+}
+
+// put_4_points(i, j) 함수
+void put_4_points(int i, int j) {  
+    // mutex를 통해 state에 접근  
+    p(mutex);  
+    // state 변경  
+    state[i][j] = !writing;  
+    // 사방의 점을 확인하여 p(sem)으로 대기 중인 쓰레드에 v() 전달  
+    test(i, j-1);  
+    test(i, j+1);  
+    test(i-1, j);  
+    test(i+1, j);  
+    v(mutex);  
+}
+
 
 
 ##### B. bool state[i][j] –점(i,j)가 쓰기 상태인지 아닌지를 저장(쓰기 상태 일 때 state[i][j] = writing)  
