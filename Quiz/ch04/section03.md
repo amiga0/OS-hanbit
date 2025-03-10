@@ -41,8 +41,7 @@
 ---
 
 ### 📌 답 7️⃣  
-## 🔹 동기화 알고리즘 설계  
-
+#### 🔹 동기화 알고리즘 설계  
 1️⃣ 각각의 쓰레드는 각 점에 대해, 미리 `up`, `down`, `left`, `right`를 검사하여  
    주위 4개의 점에 모두 쓰기(`write`)가 없을 때 4개의 점을 읽고(`read`)  
    점수를 계산 및 합산하여 점 `(i, j)`에 쓰기(`write`)를 한다.  
@@ -51,24 +50,12 @@
 2️⃣ 각 점에 대해 하나의 쓰레드만이 쓰기(`write`)를 할 수 있고,  
    각 점에 하나의 읽기(`read`)가 있다면 쓰기(`write`)를 할 수 없다.  
 
----
+3️⃣ 문제 해결을 위한 자료구조 및 초기화
 
-## 🔹 문제 해결을 위한 자료구조 및 초기화  
+##### A. semaphore sem[i][j] – 쓰레드[i]가 점(i, j)에 쓰기(write)를 하기 위한 세마포 
+       [ 초기값: 0 ] 
 
-### ✅ A. 세마포어(`semaphore`) 선언  
-- **`sem[i][j]`** – 쓰레드 `i`가 점 `(i,j)`에 쓰기(`write`)를 하기 위한 세마포어  
-  - 초기값: `0`  
-
-### ✅ B. 상태 변수(`state[i][j]`) 선언  
-- **`state[i][j]`** – 점 `(i,j)`가 쓰기 상태인지 아닌지를 저장  
-  - 쓰기 상태일 때 `state[i][j] = writing`  
-  - 초기값: `!writing`  
-
----
-
-## 🔹 동기화 알고리즘 (함수 정의)  
-
-| `take_4_points(i, j)` | `put_4_points(i, j)` |
+      | `take_4_points(i, j)` | `put_4_points(i, j)` |
 |------------------------|----------------------|
 | ```c                 | ```c                 |
 | void take_4_points(int i, int j) { | void put_4_points(int i, int j) { |
@@ -86,10 +73,29 @@
 | | } |
 | | ``` |
 
----
 
-## 🔹 `test(i, j)` 함수 (쓰기 상태 확인)  
-```c
+##### B. bool state[i][j] –점(i,j)가 쓰기 상태인지 아닌지를 저장(쓰기 상태 일 때 state[i][j] = writing)  
+      [ 초기값: !writing ]
+
+
+##### C. semaphore mutex – state를 관리하기 위한 세마포
+      [ 초기값: 1 ]
+
+
+#### 🔹 쓰레드와 동기화 알고리즘의 의사코드
+
+쓰레드 I –
+for(j=0 ; j<10 ; j++) {
+	// 점(i, j) 사방에 write가 없을 때까지 p(sem[i, j])로 대기
+	take_4_points(i, j)
+		…read 4 points and calculate
+		…write at (i, j)
+	// 점(i, j) 사방의 점들에 대해, p(sem)으로 대기중인 쓰레드에 v()전달
+	put_4_points(i, j)
+} // for j
+
+
+
 void test(int i, int j) {
     // 점(i, j) 사방의 점들의 state를 확인
     if (state[i][j-1] != writing &&
@@ -102,16 +108,4 @@ void test(int i, int j) {
     }
 }
 
-## 🔹 쓰레드와 동기화 알고리즘
-void thread_function(int i) {
-    for (int j = 0; j < 10; j++) {
-        // 점(i, j) 사방에 write가 없을 때까지 대기
-        take_4_points(i, j);
-        // 4개의 점을 읽고 점수를 계산 후 점(i, j)에 기록
-        read_4_points_and_calculate();
-        write_at(i, j);
-        // 대기 중인 쓰레드에게 v() 전달
-        put_4_points(i, j);
-    }
-}
 
