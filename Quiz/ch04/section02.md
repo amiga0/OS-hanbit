@@ -56,7 +56,7 @@ T1() {
     }
 }
 
-SignalHandlerT1(signal) { // 여기 시그널 확인은 불필요하나
+SignalHandlerT1(signal) {   // 여기 시그널 확인은 불필요하나
     if(signal == SIGALRM) { // 의미를 분명히 하기 위해 넣음
         Kill(T2, SIGUSR1);  // T2에 SIGUSR1을 보냄
     }
